@@ -30,7 +30,7 @@ import { Tuning } from '@src/model/Tuning';
 import { VibratoType } from '@src/model/VibratoType';
 import { Voice } from '@src/model/Voice';
 import { Logger } from '@src/Logger';
-import { ModelUtils, TuningParseResult } from '@src/model/ModelUtils';
+import { ModelUtils, TuningParseResult, PercussionParseResult } from '@src/model/ModelUtils';
 import { AlphaTabError, AlphaTabErrorType } from '@src/AlphaTabError';
 import { BeatCloner } from '@src/generated/model/BeatCloner';
 import { IOHelper } from '@src/io/IOHelper';
@@ -48,6 +48,7 @@ export enum AlphaTexSymbols {
     Dot,
     String,
     Tuning,
+    Percussion,
     LParensis,
     RParensis,
     LBrace,
@@ -498,8 +499,14 @@ export class AlphaTexImporter extends ScoreImporter {
                     this._sy = AlphaTexSymbols.Tuning;
                     this._syData = tuning;
                 } else {
-                    this._sy = AlphaTexSymbols.String;
-                    this._syData = name;
+                    let percussionNote: PercussionParseResult | null = ModelUtils.parsePercussionNote(name);
+                    if (percussionNote) {
+                        this._sy = AlphaTexSymbols.Percussion;
+                        this._syData = percussionNote;
+                    } else {
+                        this._sy = AlphaTexSymbols.String;
+                        this._syData = name;
+                    }
                 }
             } else {
                 this.error('symbol', AlphaTexSymbols.String, false);
@@ -759,6 +766,13 @@ export class AlphaTexImporter extends ScoreImporter {
                 } else if (this._sy === AlphaTexSymbols.String) {
                     let instrumentName: string = (this._syData as string).toLowerCase();
                     this._currentTrack.playbackInfo.program = GeneralMidi.getValue(instrumentName);
+                    if (instrumentName === 'percussion') {
+                        this._currentTrack.playbackInfo.primaryChannel = 9;
+                        this._currentTrack.playbackInfo.secondaryChannel = 9;
+                        for (let staff of this._currentTrack.staves) {
+                            staff.isPercussion = true;
+                        }
+                    }
                 } else {
                     this.error('instrument', AlphaTexSymbols.Number, true);
                 }
@@ -1470,6 +1484,7 @@ export class AlphaTexImporter extends ScoreImporter {
         let fret: number = -1;
         let octave: number = -1;
         let tone: number = -1;
+        let percussionArticulation: number = -1;
         switch (this._sy) {
             case AlphaTexSymbols.Number:
                 fret = this._syData as number;
@@ -1488,6 +1503,10 @@ export class AlphaTexImporter extends ScoreImporter {
                 let tuning: TuningParseResult = this._syData as TuningParseResult;
                 octave = tuning.octave;
                 tone = tuning.noteValue;
+                break;
+            case AlphaTexSymbols.Percussion:
+                let percussionNote: PercussionParseResult = this._syData as PercussionParseResult;
+                percussionArticulation = percussionNote.percussionArticulation;
                 break;
             default:
                 return false;
@@ -1525,6 +1544,7 @@ export class AlphaTexImporter extends ScoreImporter {
             note.octave = octave;
             note.tone = tone;
             note.isTieDestination = isTie;
+            note.percussionArticulation = percussionArticulation;
         }
         beat.addNote(note);
         this.noteEffects(note);
