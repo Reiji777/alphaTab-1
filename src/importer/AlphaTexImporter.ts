@@ -112,6 +112,7 @@ export class AlphaTexImporter extends ScoreImporter {
     private _currentTrack!: Track;
     private _currentStaff!: Staff;
     private _input: string = '';
+    private _mergeWithScore: unknown;
     private _ch: number = 0;
     private _curChPos: number = 0;
     private _sy: AlphaTexSymbols = AlphaTexSymbols.No;
@@ -136,10 +137,13 @@ export class AlphaTexImporter extends ScoreImporter {
         return 'AlphaTex';
     }
 
-    public initFromString(tex: string, settings: Settings) {
+    public initFromString(tex: string, settings: Settings, mergeWithScore?: Score) {
         this.data = ByteBuffer.empty();
         this._input = tex;
         this.settings = settings;
+        if (mergeWithScore) {
+            this._mergeWithScore = mergeWithScore;
+        }
     }
 
     public readScore(): Score {
@@ -149,7 +153,7 @@ export class AlphaTexImporter extends ScoreImporter {
             }
             this._allowTuning = true;
             this._lyrics = new Map<number, Lyrics[]>();
-            this.createDefaultScore();
+            this._mergeWithScore ? this.mergeScore() : this.createDefaultScore();
             this._curChPos = 0;
             this._currentDuration = Duration.Quarter;
             this._currentDynamics = DynamicValue.F;
@@ -224,10 +228,30 @@ export class AlphaTexImporter extends ScoreImporter {
         this.newTrack();
     }
 
+    private mergeScore(): void {
+        if (this._mergeWithScore instanceof Score) this._score = this._mergeWithScore;
+        this._trackChannel = this.findNextAvailableChannel();
+    }
+
+    private findNextAvailableChannel(): number {
+        const occupiedChannels = [];
+        const tracks = this._score.tracks
+        for (let i = 0; i < tracks.length; i++) {
+            const track = tracks[i];
+            //Save Channel 10 for drumkits
+            if (track.playbackInfo.primaryChannel !== 9) occupiedChannels.push(track.playbackInfo.primaryChannel);
+            if (track.playbackInfo.secondaryChannel !== 9) occupiedChannels.push(track.playbackInfo.secondaryChannel);
+        }
+        const maxOccupiedChannel = Math.max(...occupiedChannels);
+        return maxOccupiedChannel === 8 ? 10 : maxOccupiedChannel + 1;
+    }
+
     private newTrack(): void {
         this._currentTrack = new Track();
         this._currentTrack.ensureStaveCount(1);
         this._currentTrack.playbackInfo.program = 25;
+        //Skip Channel 10
+        this._trackChannel === 9 && this._trackChannel++;
         this._currentTrack.playbackInfo.primaryChannel = this._trackChannel++;
         this._currentTrack.playbackInfo.secondaryChannel = this._trackChannel++;
         this._currentStaff = this._currentTrack.staves[0];

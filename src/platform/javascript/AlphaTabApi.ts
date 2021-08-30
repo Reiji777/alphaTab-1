@@ -4,6 +4,7 @@ import { MidiFileGenerator } from '@src/midi/MidiFileGenerator';
 import { MidiFile } from '@src/midi/MidiFile';
 import { LayoutMode } from '@src/DisplaySettings';
 import { IEventEmitterOfT, EventEmitterOfT } from '@src/EventEmitter';
+import { Score } from '@src/model/Score';
 import { Track } from '@src/model/Track';
 import { AlphaSynthWebWorkerApi } from '@src/platform/javascript/AlphaSynthWebWorkerApi';
 import { BrowserUiFacade } from '@src/platform/javascript/BrowserUiFacade';
@@ -20,9 +21,9 @@ export class AlphaTabApi extends AlphaTabApiBase<unknown> {
         super(new BrowserUiFacade(element), options);
     }
 
-    public tex(tex: string, tracks?: number[]): void {
+    public tex(tex: string, tracks?: number[], mergeWithScore?: Score): void {
         let browser: BrowserUiFacade = this.uiFacade as BrowserUiFacade;
-        super.tex(tex, browser.parseTracks(tracks));
+        super.tex(tex, browser.parseTracks(tracks), mergeWithScore);
     }
 
     public print(width: string, additionalSettings:unknown = null): void {
