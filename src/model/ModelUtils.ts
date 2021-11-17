@@ -16,6 +16,10 @@ export class TuningParseResult {
     }
 }
 
+export class PercussionParseResult {
+    public percussionArticulation: number = 0;
+}
+
 /**
  * This public class contains some utilities for working with model public classes
  */
@@ -138,7 +142,8 @@ export class ModelUtils {
                     return null;
                 }
                 octave += String.fromCharCode(c);
-            } else if ((c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || c === 0x23) {
+            //Save letter 'p' for percussion note
+            } else if ((c !== 0x50 && c !== 0x70) && ((c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || c === 0x23)) {
                 note += String.fromCharCode(c);
             } else {
                 return null;
@@ -151,6 +156,30 @@ export class ModelUtils {
         result.octave = parseInt(octave) + 1;
         result.note = note.toLowerCase();
         result.noteValue = ModelUtils.getToneForText(result.note);
+        return result;
+    }
+
+    public static parsePercussionNote(name: string): PercussionParseResult | null {
+        let percussionPrefix: string = '';
+        let percussionArticulation: string = '';
+        for (let i: number = 0; i < name.length; i++) {
+            let c: number = name.charCodeAt(i);
+            if (c >= 0x30 && c <= 0x39) {
+                if (!percussionPrefix) {
+                    return null;
+                }
+                percussionArticulation += String.fromCharCode(c);
+            } else if (c === 0x50 || c === 0x70) {
+                percussionPrefix += String.fromCharCode(c);
+            } else {
+                return null;
+            }
+        }
+        if (!percussionPrefix || !percussionArticulation) {
+            return null;
+        }
+        let result: PercussionParseResult = new PercussionParseResult();
+        result.percussionArticulation = parseInt(percussionArticulation);
         return result;
     }
 
