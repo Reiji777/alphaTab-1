@@ -325,13 +325,14 @@ export class AlphaTabApiBase<TSettings> {
     /**
      * Tells alphaTab to render the given alphaTex.
      * @param tex The alphaTex code to render.
+     * @param mergeWithScore If set, merge with the existing tab.
      * @param tracks If set, the given tracks will be rendered, otherwise the first track only will be rendered.
      */
-    public tex(tex: string, tracks?: number[]): void {
+    public tex(tex: string, tracks?: number[], mergeWithScore?: Score): void {
         try {
             let parser: AlphaTexImporter = new AlphaTexImporter();
             let data: ByteBuffer = ByteBuffer.fromString(tex);
-            parser.init(data, this.settings);
+            parser.init(data, this.settings, mergeWithScore);
             let score: Score = parser.readScore();
             this.renderScore(score, tracks);
         } catch (e) {

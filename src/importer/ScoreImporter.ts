@@ -9,13 +9,17 @@ import { Settings } from '@src/Settings';
 export abstract class ScoreImporter {
     protected data!: IReadable;
     protected settings!: Settings;
+    protected _mergeWithScore: unknown;
 
     /**
      * Initializes the importer with the given data and settings.
      */
-    public init(data: IReadable, settings: Settings): void {
+    public init(data: IReadable, settings: Settings, mergeWithScore?: Score): void {
         this.data = data;
         this.settings = settings;
+        if (mergeWithScore) {
+            this._mergeWithScore = mergeWithScore;
+        }
     }
 
     public abstract get name(): string;

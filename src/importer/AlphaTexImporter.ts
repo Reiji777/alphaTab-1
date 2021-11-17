@@ -134,7 +134,7 @@ export class AlphaTexImporter extends ScoreImporter {
         try {
             this._allowTuning = true;
             this._lyrics = new Map<number, Lyrics[]>();
-            this.createDefaultScore();
+            this._mergeWithScore ? this.mergeScore() : this.createDefaultScore();
             this._curChPos = 0;
             this._currentDuration = Duration.Quarter;
             this._currentDynamics = DynamicValue.F;
@@ -205,10 +205,30 @@ export class AlphaTexImporter extends ScoreImporter {
         this.newTrack();
     }
 
+    private mergeScore(): void {
+        if (this._mergeWithScore instanceof Score) this._score = this._mergeWithScore;
+        this._trackChannel = this.findNextAvailableChannel();
+    }
+
+    private findNextAvailableChannel(): number {
+        const occupiedChannels = [];
+        const tracks = this._score.tracks
+        for (let i = 0; i < tracks.length; i++) {
+            const track = tracks[i];
+            //Save Channel 10 for drumkits
+            if (track.playbackInfo.primaryChannel !== 9) occupiedChannels.push(track.playbackInfo.primaryChannel);
+            if (track.playbackInfo.secondaryChannel !== 9) occupiedChannels.push(track.playbackInfo.secondaryChannel);
+        }
+        const maxOccupiedChannel = Math.max(...occupiedChannels);
+        return maxOccupiedChannel === 8 ? 10 : maxOccupiedChannel + 1;
+    }
+
     private newTrack(): void {
         this._currentTrack = new Track();
         this._currentTrack.ensureStaveCount(1);
         this._currentTrack.playbackInfo.program = 25;
+        //Skip Channel 10
+        this._trackChannel === 9 && this._trackChannel++;
         this._currentTrack.playbackInfo.primaryChannel = this._trackChannel++;
         this._currentTrack.playbackInfo.secondaryChannel = this._trackChannel++;
         this._currentStaff = this._currentTrack.staves[0];
