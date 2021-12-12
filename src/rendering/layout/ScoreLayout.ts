@@ -239,7 +239,8 @@ export abstract class ScoreLayout {
         let msg: string = 'rendered by alphaTab';
         let canvas: ICanvas = this.renderer.canvas!;
         let resources: RenderingResources = this.renderer.settings.display.resources;
-        let size: number = 12 * this.renderer.settings.display.scale;
+        let size: number = 12;
+        // let size: number = 12 * this.renderer.settings.display.scale;
         let height: number = size * 2;
         this.height += height;
         let x: number = this.width / 2;
