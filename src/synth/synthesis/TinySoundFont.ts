@@ -116,8 +116,13 @@ export class TinySoundFont {
         while (!this._midiEventQueue.isEmpty) {
             let m: SynthEvent = this._midiEventQueue.dequeue();
             if (m.isMetronome && this.metronomeVolume > 0) {
-                this.channelNoteOff(SynthConstants.MetronomeChannel, 33);
-                this.channelNoteOn(SynthConstants.MetronomeChannel, 33, 95 / 127);
+                if (m.isMetronomeCountIn) {
+                    this.channelNoteOff(SynthConstants.MetronomeChannel, 34);
+                    this.channelNoteOn(SynthConstants.MetronomeChannel, 34, 95 / 127);
+                } else {
+                    this.channelNoteOff(SynthConstants.MetronomeChannel, 33);
+                    this.channelNoteOn(SynthConstants.MetronomeChannel, 33, 95 / 127);
+                }
             } else if (m.event) {
                 this.processMidiMessage(m.event);
             }
@@ -130,8 +135,9 @@ export class TinySoundFont {
                 const channel: number = voice.playingChannel;
                 // channel is muted if it is either explicitley muted, or another channel is set to solo but not this one.
                 // exception. metronome is implicitly added in solo
-                const isChannelMuted: boolean = this._mutedChannels.has(channel)
-                    || (anySolo && channel != SynthConstants.MetronomeChannel && !this._soloChannels.has(channel));
+                const isChannelMuted: boolean =
+                    this._mutedChannels.has(channel) ||
+                    (anySolo && channel != SynthConstants.MetronomeChannel && !this._soloChannels.has(channel));
 
                 if (!buffer) {
                     voice.kill();
@@ -206,7 +212,6 @@ export class TinySoundFont {
             this.channelSetPresetNumber(SynthConstants.MetronomeChannel, 0, true);
         }
     }
-
 
     public get masterVolume(): number {
         return SynthHelper.decibelsToGain(this.globalGainDb);
@@ -710,7 +715,7 @@ export class TinySoundFont {
             presetIndex = this.getPresetIndex(c.bank & 0x7ff, presetNumber);
         }
         c.presetIndex = presetIndex;
-        return (presetIndex !== -1);
+        return presetIndex !== -1;
     }
 
     /**

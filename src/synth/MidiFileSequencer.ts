@@ -392,7 +392,8 @@ export class MidiFileSequencer {
                 metronomeTick,
                 i,
                 metronomeLengthInTicks,
-                metronomeLengthInMillis
+                metronomeLengthInMillis,
+                true
             );
             state.synthData.push(metronome);
             metronome.time = metronomeTime;

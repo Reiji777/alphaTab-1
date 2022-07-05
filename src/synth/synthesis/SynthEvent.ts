@@ -9,22 +9,25 @@ export class SynthEvent {
     public eventIndex: number;
     public event: MidiEvent;
     public readonly isMetronome: boolean;
+    public isMetronomeCountIn: boolean;
     public time: number = 0;
 
     public constructor(eventIndex: number, e: MidiEvent) {
         this.eventIndex = eventIndex;
         this.event = e;
         this.isMetronome = this.event instanceof SystemExclusiveEvent && (this.event as SystemExclusiveEvent).isMetronome;
+        this.isMetronomeCountIn = false;
     }
 
 
-    public static newMetronomeEvent(eventIndex: number, tick: number, counter: number, durationInTicks: number, durationInMillis: number): SynthEvent {
+    public static newMetronomeEvent(eventIndex: number, tick: number, counter: number, durationInTicks: number, durationInMillis: number, isCountIn: boolean = false): SynthEvent {
         const evt = new SystemExclusiveEvent(0, tick,
             MidiEventType.SystemExclusive2,
             SystemExclusiveEvent.AlphaTabManufacturerId,
             SystemExclusiveEvent.encodeMetronome(counter, durationInTicks, durationInMillis)
         );
         const x: SynthEvent = new SynthEvent(eventIndex, evt);
+        x.isMetronomeCountIn = isCountIn;
         return x;
     }
 }
